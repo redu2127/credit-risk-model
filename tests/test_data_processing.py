@@ -56,4 +56,3 @@ def test_create_features_transaction_count():
     ].iloc[0]
 
     assert c1_count == 2
-    

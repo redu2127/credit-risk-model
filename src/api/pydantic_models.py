@@ -16,4 +16,3 @@ class CustomerData(BaseModel):
     Recency: float
     Frequency: float
     Monetary: float
-    
