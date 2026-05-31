@@ -8,6 +8,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 from sklearn.model_selection import train_test_split
 
+print("Tracking URI:", mlflow.get_tracking_uri())
+mlflow.set_tracking_uri("sqlite:///mlflow.db")
+mlflow.set_experiment("Credit Risk Model")
+
 
 DATA_PATH = "data/processed/model_data.csv"
 MODEL_PATH = "models/best_model.pkl"
