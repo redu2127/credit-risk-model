@@ -1,51 +1,183 @@
-cat > README.md <<'EOF'
-# Credit Risk Probability Model for Alternative Data
+# Credit Risk Model API
 
-## Project Overview
+## Overview
 
-This project is part of the 10 Academy Artificial Intelligence Mastery Week 4 Challenge. The goal is to build a credit risk probability model for Bati Bank using transaction data from the Xente eCommerce platform.
+This project develops a machine learning-based Credit Risk Prediction API that evaluates customer risk profiles based on transaction behavior and financial activity. The model predicts the probability of a customer being high risk and classifies the customer as either "High Risk" or "Low Risk".
 
-Bati Bank wants to support a buy-now-pay-later service. Since the dataset does not contain a direct loan default label, this project will use customer transaction behavior to create a proxy risk label.
+The project includes:
 
----
-
-## Credit Scoring Business Understanding
-
-### 1. How does the Basel II Accord influence the need for an interpretable and well-documented model?
-
-The Basel II Accord emphasizes accurate risk measurement, documentation, transparency, and sound risk management. For a credit risk model, this means the bank must be able to explain how risk is measured and how credit decisions are made.
-
-An interpretable model is important because credit decisions affect customers directly. If a customer is classified as high risk, the bank should be able to explain the reason. A well-documented model also helps auditors, regulators, and internal risk teams review the model.
-
-In this project, Basel II influences the modeling approach by requiring clear documentation of the data, assumptions, proxy target variable, feature engineering process, model choice, evaluation metrics, and limitations.
+- Data preprocessing and feature engineering
+- Machine learning model training
+- FastAPI deployment
+- Docker containerization
+- Automated testing and CI/CD using GitHub Actions
 
 ---
 
-### 2. Why is a proxy variable necessary, and what business risks does proxy-based prediction introduce?
+## Project Structure
 
-The dataset does not include a direct default label. There is no column showing whether a customer failed to repay a loan. Because supervised machine learning requires a target variable, a proxy variable is necessary.
+credit-risk-model/
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
+├── data/
+├── notebooks/
+├── reports/
+│
+├── src/
+│   ├── api/
+│   │   ├── main.py
+│   │   └── pydantic_models.py
+│   │
+│   ├── data_preprocessing.py
+│   └── train.py
+│
+├── tests/
+│   └── test_data_processing.py
+│
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── mlflow.db
+└── README.md
+---
 
-The proxy target will be created using customer behavior, especially RFM metrics:
+## Features
 
-- Recency: how recently the customer made a transaction
-- Frequency: how often the customer transacts
-- Monetary: how much value the customer generates
-
-Customers with low engagement may be treated as high-risk proxy customers.
-
-However, this introduces business risks. The proxy is not actual loan default. Some customers may be incorrectly classified as risky even if they would repay a loan. Other customers may appear active but still default. This can lead to unfair credit decisions, lost revenue, or increased credit losses.
-
-Therefore, the proxy variable must be clearly documented as an assumption and should eventually be validated using real repayment data.
+- Transaction-based risk assessment
+- Risk probability prediction
+- Risk classification
+- REST API interface
+- Docker deployment
+- GitHub Actions CI pipeline
 
 ---
 
-### 3. What are the trade-offs between Logistic Regression with WoE and Gradient Boosting?
+## Technologies Used
 
-Logistic Regression with Weight of Evidence is simple, interpretable, and commonly used in credit scoring. It is easier to explain to regulators and business teams. It also supports scorecard-style modeling.
+- Python 3.10
+- FastAPI
+- Scikit-Learn
+- Pandas
+- NumPy
+- Joblib
+- Docker
+- MLflow
+- GitHub Actions
+- Pytest
 
-Gradient Boosting can capture complex patterns and may produce better predictive performance. However, it is harder to explain and may require additional interpretability tools.
+---
 
-In a regulated financial context, the best model is not always the most complex one. The model must balance predictive performance, interpretability, fairness, and regulatory acceptability.
+## Installation
 
-For this project, Logistic Regression will be used as an interpretable baseline, while more complex models can be compared later.
-EOF
+### Clone Repository
+
+git clone https://github.com/redu2127/credit-risk-model.git
+cd credit-risk-model
+### Create Virtual Environment
+
+python -m venv venv
+### Activate Environment
+
+Windows:
+
+venv\Scripts\activate
+Linux/Mac:
+
+source venv/bin/activate
+### Install Dependencies
+
+pip install -r requirements.txt
+---
+
+## Running the API
+
+Start FastAPI:
+
+uvicorn src.api.main:app --reload
+API documentation:
+
+http://localhost:8000/docs
+---
+
+## Docker Deployment
+
+### Build Docker Image
+
+docker build -t credit-risk-api .
+### Run Docker Container
+
+docker run -p 8000:8000 credit-risk-api
+### Access API
+
+http://localhost:8000/docs
+---
+
+## Example Request
+
+POST
+
+http://localhost:8000/predict
+Request Body:
+
+{
+  "total_transaction_amount": 10,
+  "average_transaction_amount": 1,
+  "transaction_count": 1,
+  "std_transaction_amount": 0,
+  "total_value": 10,
+  "average_value": 1,
+  "average_transaction_hour": 12,
+  "average_transaction_day": 15,
+  "average_transaction_month": 6,
+  "fraud_count": 0,
+  "fraud_rate": 0,
+  "Recency": 100,
+  "Frequency": 1,
+  "Monetary": 10
+}
+Example Response:
+
+{
+  "risk_probability": 0.84,
+  "risk_class": "High Risk"
+}
+---
+
+## Model Output
+
+| Output | Description |
+|----------|-------------|
+| risk_probability | Probability that a customer belongs to the high-risk class |
+| risk_class | Final classification (High Risk or Low Risk) |
+
+---
+
+## Testing
+
+Run tests using:
+
+pytest tests
+---
+
+## CI/CD
+
+GitHub Actions automatically performs:
+
+- Code linting using Flake8
+- Automated unit testing using Pytest
+- Continuous Integration validation on every push
+
+---
+
+## Results
+
+The deployed API successfully:
+
+- Accepts customer transaction features
+- Performs real-time risk prediction
+- Returns risk probability and classification
+- Supports containerized deployment using Docker
+
