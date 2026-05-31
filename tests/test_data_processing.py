@@ -1,6 +1,6 @@
 import pandas as pd
 
-from src.data_processing import create_features, create_rfm_target
+from src.data_preprocessing import create_features
 
 
 def test_create_features_returns_expected_columns():
