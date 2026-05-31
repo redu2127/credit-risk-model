@@ -1,9 +1,11 @@
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
 
 
 RAW_DATA_PATH = "data/raw/data.csv"
-PROCESSED_DATA_PATH = "data/processed/features.csv"
+FEATURES_PATH = "data/processed/features.csv"
+MODEL_DATA_PATH = "data/processed/model_data.csv"
 
 
 def load_data(path=RAW_DATA_PATH):
@@ -45,11 +47,9 @@ def scale_features(df):
     df = df.copy()
 
     id_col = df[["CustomerId"]]
-
     numeric_cols = df.drop(columns=["CustomerId"]).columns
 
     scaler = StandardScaler()
-
     scaled_values = scaler.fit_transform(df[numeric_cols])
 
     scaled_df = pd.DataFrame(
@@ -65,16 +65,99 @@ def scale_features(df):
     return final_df
 
 
+def create_rfm_target(raw_df, features_df):
+    raw_df = raw_df.copy()
+
+    raw_df["TransactionStartTime"] = pd.to_datetime(
+        raw_df["TransactionStartTime"]
+    )
+
+    snapshot_date = raw_df["TransactionStartTime"].max() + pd.Timedelta(days=1)
+
+    rfm = raw_df.groupby("CustomerId").agg(
+        Recency=(
+            "TransactionStartTime",
+            lambda x: (snapshot_date - x.max()).days
+        ),
+        Frequency=(
+            "TransactionId",
+            "count"
+        ),
+        Monetary=(
+            "Value",
+            "sum"
+        )
+    ).reset_index()
+
+    scaler = StandardScaler()
+
+    rfm_scaled = scaler.fit_transform(
+        rfm[["Recency", "Frequency", "Monetary"]]
+    )
+
+    kmeans = KMeans(
+        n_clusters=3,
+        random_state=42,
+        n_init=10
+    )
+
+    rfm["cluster"] = kmeans.fit_predict(rfm_scaled)
+
+    cluster_summary = rfm.groupby("cluster").agg(
+        avg_recency=("Recency", "mean"),
+        avg_frequency=("Frequency", "mean"),
+        avg_monetary=("Monetary", "mean"),
+        customer_count=("CustomerId", "count")
+    )
+
+    print("\nCluster Summary:")
+    print(cluster_summary)
+
+    high_risk_cluster = cluster_summary["avg_frequency"].idxmin()
+
+    print("\nHigh risk cluster selected:", high_risk_cluster)
+
+    rfm["is_high_risk"] = (
+        rfm["cluster"] == high_risk_cluster
+    ).astype(int)
+
+    final_df = features_df.merge(
+        rfm[
+            [
+                "CustomerId",
+                "Recency",
+                "Frequency",
+                "Monetary",
+                "is_high_risk"
+            ]
+        ],
+        on="CustomerId",
+        how="left"
+    )
+
+    return final_df
+
+
 def main():
-    df = load_data()
-    features = create_features(df)
+    raw_df = load_data()
+
+    features = create_features(raw_df)
+    features.to_csv(FEATURES_PATH, index=False)
+
     scaled_features = scale_features(features)
 
-    scaled_features.to_csv(PROCESSED_DATA_PATH, index=False)
+    final_df = create_rfm_target(
+        raw_df,
+        scaled_features
+    )
 
-    print("Task 3 completed successfully.")
-    print(f"Processed features saved to: {PROCESSED_DATA_PATH}")
-    print("Shape:", scaled_features.shape)
+    final_df.to_csv(MODEL_DATA_PATH, index=False)
+
+    print("\nTask 3 and Task 4 completed successfully.")
+    print(f"Features saved to: {FEATURES_PATH}")
+    print(f"Model data saved to: {MODEL_DATA_PATH}")
+    print("\nTarget distribution:")
+    print(final_df["is_high_risk"].value_counts())
 
 
 if __name__ == "__main__":
